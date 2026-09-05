@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bộ Sưu Tập X## chubby </title>
+  <!-- Nhúng Thư Viện Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Font chữ Inter hiện đại -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px 12px 40px 12px;
+    }
+
+    /* Header Bar */
+    .app-header {
+      width: 100%;
+      max-width: 480px;
+      padding: 12px 4px 20px 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .app-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Thanh Segment Switcher Hiện Đại */
+    .tab-wrapper {
+      position: sticky;
+      top: 12px;
+      z-index: 100;
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 24px;
+    }
+
+    .nav-tabs {
+      display: flex;
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 4px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 12px;
+      background: transparent;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+
+    /* Container Nội Dung */
+    .feed-container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .page-content {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .page-content.active {
+      display: flex;
+    }
+
+    /* Thẻ Card Hiển Thị */
+    .card {
+      background: #1e293b;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+      transition: transform 0.2s ease;
+    }
+
+    .card-header {
+      padding: 14px 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .card-content {
+      width: 100%;
+      background-color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .card-content img, 
+    .card-content video {
+      width: 100%;
+      max-height: 550px;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Thanh Chỉnh Âm Lượng Tùy Biến */
+    .custom-audio-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: rgba(15, 23, 42, 0.6);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .volume-icon {
+      font-size: 0.9rem;
+      color: #38bdf8;
+    }
+
+    .custom-audio-control input[type="range"] {
+      flex: 1;
+      accent-color: #38bdf8;
+      cursor: pointer;
+      height: 4px;
+      border-radius: 2px;
+    }
+
+    .volume-text {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #94a3b8;
+      min-width: 38px;
+      text-align: right;
+    }
+
+    /* Trạng Thái Tải Dữ Liệu */
+    .status-box {
+      text-align: center;
+      padding: 40px 20px;
+      background: #1e293b;
+      border-radius: 20px;
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- App Header -->
+  <div class="app-header">
+    <div class="app-title">✨ Bộ Sưu Tập</div>
+  </div>
+
+  <!-- Thanh Segment Switcher -->
+  <div class="tab-wrapper">
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchPage('video-page', this)">
+        <span></span> Trang Video
+      </button>
+      <button class="tab-btn" onclick="switchPage('image-page', this)">
+        <span></span> Trang Ảnh
+      </button>
+    </div>
+  </div>
+
+  <div class="feed-container">
+    <!-- Trang Video -->
+    <div id="video-page" class="page-content active">
+      <div class="status-box">Đang kết nối dữ liệu...</div>
+    </div>
+
+    <!-- Trang Ảnh -->
+    <div id="image-page" class="page-content">
+      <div class="status-box">Đang kết nối dữ liệu...</div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://mzulupuvaslegxclsyck.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16dWx1cHV2YXNsZWd4Y2xzeWNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzQxMzQsImV4cCI6MjEwNDExMDEzNH0.0iz8DsFpxGoWnELDd3F4ONqRNgG0nwkKzsYHoh2B-x0';
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function loadMedia() {
+      const { data, error } = await supabaseClient
+        .from('media')
+        .select('*')
+        .order('id', { ascending: false });
+
+      const videoPage = document.getElementById('video-page');
+      const imagePage = document.getElementById('image-page');
+
+      if (error) {
+        console.error('Lỗi kết nối Supabase:', error);
+        videoPage.innerHTML = '<div class="status-box">Không thể tải dữ liệu. Bạn hãy kiểm tra lại bảng Supabase nhé!</div>';
+        imagePage.innerHTML = '<div class="status-box">Không thể tải dữ liệu.</div>';
+        return;
+      }
+
+      videoPage.innerHTML = '';
+      imagePage.innerHTML = '';
+
+      if (!data || data.length === 0) {
+        videoPage.innerHTML = '<div class="status-box">Chưa có video nào trong cơ sở dữ liệu.</div>';
+        imagePage.innerHTML = '<div class="status-box">Chưa có ảnh nào trong cơ sở dữ liệu.</div>';
+        return;
+      }
+
+      let hasVideo = false;
+      let hasImage = false;
+
+      data.forEach(item => {
+        if (item.type === 'video') {
+          hasVideo = true;
+          videoPage.appendChild(createVideoCard(item));
+        } else if (item.type === 'image') {
+          hasImage = true;
+          imagePage.appendChild(createImageCard(item));
+        }
+      });
+
+      if (!hasVideo) videoPage.innerHTML = '<div class="status-box">Chưa có video nào.</div>';
+      if (!hasImage) imagePage.innerHTML = '<div class="status-box">Chưa có ảnh nào.</div>';
+    }
+
+    function createVideoCard(item) {
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      card.innerHTML = `
+        <div class="card-header">${item.title || 'Video'}</div>
+        <div class="card-content">
+          <video controls preload="metadata">
+            <source src="${item.url}" type="video/mp4">
+          </video>
+        </div>
+        <div class="custom-audio-control">
+          <span class="volume-icon">§</span>
+          <input type="range" class="volume-slider" min="0" max="1" step="0.01" value="1">
+          <span class="volume-text">100%</span>
+        </div>
+      `;
+
+      const slider = card.querySelector('.volume-slider');
+      const volumeText = card.querySelector('.volume-text');
+      const video = card.querySelector('video');
+
+      slider.addEventListener('input', (e) => {
+        video.volume = e.target.value;
+        volumeText.innerText = Math.round(e.target.value * 100) + '%';
+      });
+
+      return card;
+    }
+
+    function createImageCard(item) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-header">${item.title || 'Hình ảnh'}</div>
+        <div class="card-content">
+          <img src="${item.url}" alt="${item.title || 'Ảnh'}" loading="lazy">
+        </div>
+      `;
+      return card;
+    }
+
+    function switchPage(pageId, btnElement) {
+      document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+      document.getElementById(pageId).classList.add('active');
+      btnElement.classList.add('active');
+
+      if (pageId === 'image-page') {
+        document.querySelectorAll('video').forEach(v => v.pause());
+      }
+    }
+
+    loadMedia();
+  </script>
+
+</body>
+</html>
